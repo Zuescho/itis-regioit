@@ -17,3 +17,5 @@ It should now sort it for you.
 
 If you don't always want to remember to visit the above site, import this secound script which will add an redirect button to the normal VPN overview site.  
 [Install Link](https://github.com/Zuescho/itis-regioit/raw/main/Redirect%20Button%20for%20ITIS.user.js)  
+
+![image](redirect.png)
