@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         Sort VPN Users by Certificate Expiry
 // @namespace    https://zuescho.de
-// @version      0.6
+// @version      0.7
 // @description  Sorts VPN users by certificate expiry date and highlights overdue ones.
 // @author       Zuescho
 // @match        https://itis.regioit.intern/vua/index.php?content=vpnuser&customer=0&&rowsPerPage=400
@@ -11,7 +11,7 @@
 (function() {
     'use strict';
 
-    const tableSelector = '#content > table'; // The selector for the table
+    const tableSelector = '#content .conTab'; // More specific selector for the table
     const dateColumnIndex = 5; // The index of the date column
 
     // Parses a date string in DD.MM.YYYY format.
@@ -48,7 +48,8 @@
         }
 
         const rows = Array.from(tbody.querySelectorAll('tr')).filter(row => {
-            if (row.cells.length <= dateColumnIndex) {
+            // Basic check for a valid row, you might need to adjust this
+            if (row.cells.length <= dateColumnIndex || !row.cells[dateColumnIndex]) {
                 return false;
             }
             const cellText = row.cells[dateColumnIndex].textContent.trim();
@@ -65,23 +66,34 @@
             const dateStrB = rowB.cells[dateColumnIndex].textContent.trim();
             const dateA = parseDate(dateStrA);
             const dateB = parseDate(dateStrB);
+            // Handle cases where date might be null
+            if (!dateA) return 1;
+            if (!dateB) return -1;
             return dateA - dateB;
         });
 
         rows.forEach(row => tbody.appendChild(row));
     }
 
-    // Use a MutationObserver to wait for the table to be added to the DOM.
-    const observer = new MutationObserver((mutations, obs) => {
-        const table = document.querySelector(tableSelector);
-        if (table) {
-            sortByDate(table);
-            obs.disconnect(); // Disconnect the observer once the table is found and sorted.
-        }
-    });
+    // --- Main execution ---
 
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
+    // First, try to find the table immediately.
+    const initialTable = document.querySelector(tableSelector);
+    if (initialTable) {
+        sortByDate(initialTable);
+    } else {
+        // If the table is not found, use a MutationObserver to wait for it.
+        const observer = new MutationObserver((mutations, obs) => {
+            const table = document.querySelector(tableSelector);
+            if (table) {
+                sortByDate(table);
+                obs.disconnect(); // Disconnect the observer once the table is found and sorted.
+            }
+        });
+
+        observer.observe(document.body, {
+            childList: true,
+            subtree: true
+        });
+    }
 })();
